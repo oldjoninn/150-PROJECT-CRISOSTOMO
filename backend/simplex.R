@@ -1,24 +1,29 @@
 # ============================================================
-# Problem Constants & Helper Functions
+# problem constants and helper functions
 # ============================================================
 # nolint start
 EPS <- 1e-9
 
+# plant specs across the 7 power groups
 GROUPS <- c("Coal", "Natural Gas", "Geothermal", "Hydro", "Oil-based", "Solar", "Wind")
 CAP    <- c(7000, 3300, 800, 2500, 1500, 2500, 400)
 EM     <- c(0.95, 0.40, 0.10, 0, 0.75, 0, 0)
 B1     <- c(3800, 6500, 1500, 300, 14000, 40, 60)
 FUEL   <- c(TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE)
+
+# conditions and demand across the 6 time blocks
 HEAT   <- c(1.00, 1.01, 1.03, 1.05, 1.04, 1.02)
 DEM    <- c(6300, 8600, 11800, 12300, 14000, 10600)
 A_SOLAR <- c(0, 0.10, 0.60, 0.55, 0.08, 0)
 A_WIND  <- c(0.35, 0.30, 0.25, 0.25, 0.30, 0.35)
 
+# grid operational limits
 H <- 4
 RAMP <- 1500
 WATER <- 8000
 COAL_MIN <- 0.40
 
+# compute generation cost per mwh for plant g at block t
 get_unit_cost <- function(g, t) {
   if (FUEL[g]) {
     return(round(B1[g] * HEAT[t]))
@@ -27,6 +32,7 @@ get_unit_cost <- function(g, t) {
   }
 }
 
+# get weather availability factor for solar and wind or 1 for dispatchable plants
 get_avail <- function(g, t) {
   if (GROUPS[g] == "Solar") {
     return(A_SOLAR[t])
@@ -38,7 +44,7 @@ get_avail <- function(g, t) {
 }
 
 # ============================================================
-# Corrected Simplex Method 
+# simplex method
 # ============================================================
 
 Simplex <- function(tableau, isMax, max_iter = 5000) { 
@@ -49,7 +55,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
   rhs_col <- num_cols
   num_vars <- num_cols - 1
 
-  # Give default column names if none were provided.
+  # give default column names if none were provided
   if (is.null(colnames(data))) {
     default_names <- c()
     for (j in 1:num_vars) {
@@ -59,7 +65,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     colnames(data) <- default_names
   }
 
-  # Find the "Z" column, if the tableau has one.
+  # find the z column if the tableau has one
   z_col <- 0
   for (j in 1:num_vars) {
     if (toupper(colnames(data)[j]) == "Z") {
@@ -67,7 +73,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     }
   }
 
-  # Build the list of columns we are allowed to pivot on.
+  # build the list of columns we are allowed to pivot on
   candidate_cols <- c()
   for (j in 1:num_vars) {
     if (j != z_col) {
@@ -75,8 +81,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     }
   }
 
-  # Identify slack columns (S1, S2, ...) vs decision variable columns (x1, x2, ...).
-  # If column names start with "S", use that directly; otherwise detect initial unit columns.
+  # mark which columns are slack variables vs decision variables
   is_slack <- c()
   for (k in seq_along(candidate_cols)) {
     j <- candidate_cols[k]
@@ -86,6 +91,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     } else if (startsWith(col_name, "X")) {
       is_slack <- c(is_slack, FALSE)
     } else {
+      # check if the column looks like an identity vector
       ones <- 0
       zeros <- 0
       for (i in 1:(num_rows - 1)) {
@@ -103,14 +109,16 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     }
   }
 
-  # Helper to read basic solution at any iteration (for tableau snapshots).
+  # read basic variable values at any step
   read_basic_solution <- function(mat) {
     sol <- numeric(num_vars)
     for (k in seq_along(candidate_cols)) {
       j <- candidate_cols[k]
+      # for dual minimization read decision variables straight from the bottom row
       if (!is_slack[k] && isMax == FALSE) {
         sol[j] <- mat[z_row, j]
       } else {
+        # otherwise check for a single 1 in the column to locate its basic row
         ones <- 0
         zeros <- 0
         one_row <- -1
@@ -132,7 +140,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     return(sol)
   }
 
-  # Helper to save a tableau snapshot for each iteration.
+  # capture current tableau state for step by step display
   make_snapshot <- function(mat, iter, p_col = 0, p_row = 0) {
     row_list <- list()
     for (i in 1:num_rows) {
@@ -153,9 +161,9 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
   iter <- 0
   status <- "optimal"
 
-  # Pivoting loop: same steps for maximization and minimization.
+  # main simplex pivoting loop
   while (TRUE) {
-    # Find the most negative entry in the objective row among candidate columns.
+    # pick the most negative entry in the objective row as the entering column
     pivot_col <- candidate_cols[1]
     smallest_value <- data[z_row, pivot_col]
     for (k in seq_along(candidate_cols)) {
@@ -166,14 +174,14 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
       }
     }
 
-    # Optimal once nothing is negative anymore (within EPS tolerance).
+    # stop if no negative numbers remain in the objective row
     if (smallest_value >= -EPS) {
       break
     }
 
     snapshots[[length(snapshots)]]$pivotCol <- pivot_col
 
-    # Ratio test to find the pivot row.
+    # run minimum ratio test to find the leaving row
     pivot_row <- -1
     best_ratio <- Inf
     for (i in 1:(num_rows - 1)) {
@@ -186,7 +194,7 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
       }
     }
 
-    # If no positive entry exists in the pivot column, the dual is unbounded (primal is infeasible).
+    # if no positive entries exist in the pivot column the problem is infeasible
     if (pivot_row == -1) {
       status <- "infeasible"
       break
@@ -194,13 +202,13 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
 
     snapshots[[length(snapshots)]]$pivotRow <- pivot_row
 
-    # Normalize the pivot row.
+    # scale the pivot row so the pivot element becomes 1
     pivot_value <- data[pivot_row, pivot_col]
     for (j in 1:num_cols) {
       data[pivot_row, j] <- data[pivot_row, j] / pivot_value
     }
 
-    # Zero out the rest of the pivot column.
+    # eliminate all other entries in the pivot column
     for (i in 1:num_rows) {
       if (i != pivot_row) {
         factor <- data[i, pivot_col]
@@ -213,13 +221,14 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
     iter <- iter + 1
     snapshots[[iter + 1]] <- make_snapshot(data, iter)
 
+    # guard against infinite loops
     if (iter >= max_iter) {
       status <- "error"
       break
     }
   }
 
-  # Read the final values.
+  # format the final basic solution
   raw_sol <- read_basic_solution(data)
   solution <- c()
   var_names <- c()
@@ -247,14 +256,16 @@ Simplex <- function(tableau, isMax, max_iter = 5000) {
 }
 
 # ============================================================
-# S Build Primal Constraints (>=) & Dual Tableau
+# build primal constraints and dual tableau
 # ============================================================
 
 build_lp <- function(sel, co2cap = NULL) {
+  # get indices of selected plants and create all plant-block combinations
   gi <- which(GROUPS %in% sel)
-  vars <- expand.grid(t = 1:6, g = gi) # group by group, B1..B6
+  vars <- expand.grid(t = 1:6, g = gi)
   n <- nrow(vars)
 
+  # helper to get variable column index for plant g at block t
   find_var_idx <- function(g, t) {
     which(vars$g == g & vars$t == t)
   }
@@ -263,6 +274,7 @@ build_lp <- function(sel, co2cap = NULL) {
   b_vec <- numeric(0)
   labels <- character(0)
 
+  # helper to append a new constraint row to the primal system
   add_constraint <- function(cols, vals, rhs, name) {
     row <- numeric(n)
     row[cols] <- vals
@@ -271,20 +283,20 @@ build_lp <- function(sel, co2cap = NULL) {
     labels <<- c(labels, name)
   }
 
-  # Demand constraints: sum_g x_{g,t} >= DEM[t]
+  # total generation in each block must meet or exceed demand
   for (t in 1:6) {
     t_cols <- which(vars$t == t)
     add_constraint(t_cols, 1, DEM[t], paste0("Demand B", t))
   }
 
-  # Capacity constraints: -x_{g,t} >= -CAP[g] * avail(g, t)
+  # each plant cannot exceed its available capacity per block
   for (k in 1:n) {
     g <- vars$g[k]
     t <- vars$t[k]
     add_constraint(k, -1, -CAP[g] * get_avail(g, t), paste("Capacity", GROUPS[g], paste0("B", t)))
   }
 
-  # Coal minimum & ramp limits (if Coal is selected)
+  # add minimum output and ramp limits if coal is included
   if (1 %in% gi) {
     for (t in 1:6) {
       add_constraint(find_var_idx(1, t), 1, COAL_MIN * CAP[1], paste0("Coal min B", t))
@@ -292,12 +304,13 @@ build_lp <- function(sel, co2cap = NULL) {
     for (t in 2:6) {
       c_curr <- find_var_idx(1, t)
       c_prev <- find_var_idx(1, t - 1)
-      add_constraint(c(c_curr, c_prev), c(-1, 1), -RAMP, paste0("Coal ramp up B", t))
+      # limit how fast coal output can increase or decrease between blocks
+      add_constraint(c(c_curr, c_prev), c(-1, 1), -RAMP, paste0("Coal ramp up B", t)) 
       add_constraint(c(c_curr, c_prev), c(1, -1), -RAMP, paste0("Coal ramp down B", t))
     }
   }
 
-  # Hydro water constraint (if Hydro is selected)
+  # cap total daily energy output if hydro is included
   if (4 %in% gi) {
     hydro_cols <- c()
     for (t in 1:6) {
@@ -306,7 +319,7 @@ build_lp <- function(sel, co2cap = NULL) {
     add_constraint(hydro_cols, -H, -WATER, "Hydro water")
   }
 
-  # CO2 emission cap (if enabled)
+  # cap total daily carbon emissions if a limit is set
   if (!is.null(co2cap)) {
     em_coeffs <- c()
     for (k in 1:n) {
@@ -315,7 +328,7 @@ build_lp <- function(sel, co2cap = NULL) {
     add_constraint(1:n, em_coeffs, -co2cap, "CO2 cap")
   }
 
-  # Objective coefficients: H * unit_cost(g, t)
+  # calculate total generation cost per block for each variable
   c_vec <- numeric(n)
   for (k in 1:n) {
     c_vec[k] <- H * get_unit_cost(vars$g[k], vars$t[k])
@@ -324,7 +337,7 @@ build_lp <- function(sel, co2cap = NULL) {
   A_mat <- do.call(rbind, A_rows)
   m <- nrow(A_mat)
 
-  # Build Dual Tableau: [ t(A) | I_n | Z | c ] with bottom row [ -b | 0 | 1 | 0 ]
+  # build the dual maximization tableau by transposing the primal constraints
   total_cols <- m + n + 2
   tableau <- matrix(0, nrow = n + 1, ncol = total_cols)
 
@@ -332,6 +345,7 @@ build_lp <- function(sel, co2cap = NULL) {
   tableau[1:n, (m + 1):(m + n)] <- diag(n)
   tableau[1:n, total_cols] <- c_vec
 
+  # set the bottom objective row using negated primal rhs values
   tableau[n + 1, 1:m] <- -b_vec
   tableau[n + 1, m + n + 1] <- 1
   tableau[n + 1, total_cols] <- 0
@@ -351,15 +365,17 @@ build_lp <- function(sel, co2cap = NULL) {
 }
 
 # ============================================================
-# Validation, Solving & Answer Extraction
+# validation solving and answer extraction
 # ============================================================
 
 solve_request <- function(groups, co2_on, co2_cap) {
+  # filter out invalid group names and make sure at least one is selected
   groups <- intersect(GROUPS, as.character(groups))
   if (length(groups) == 0) {
     return(list(status = "invalid", message = "Select at least one plant group."))
   }
 
+  # validate co2 cap input if the toggle is turned on
   cap <- NULL
   if (isTRUE(co2_on)) {
     cap <- suppressWarnings(as.numeric(co2_cap))
@@ -368,17 +384,20 @@ solve_request <- function(groups, co2_on, co2_cap) {
     }
   }
 
+  # build the lp and run the simplex solver
   lp <- build_lp(groups, cap)
   res <- Simplex(lp$tableau, isMax = FALSE)
   m <- lp$m
   n <- lp$n
   vars <- lp$vars
 
+  # generate readable names for each plant and time block
   var_labels <- c()
   for (k in 1:n) {
     var_labels <- c(var_labels, paste(GROUPS[vars$g[k]], paste0("B", vars$t[k])))
   }
 
+  # package solver metadata and iteration history
   out <- list(
     status = res$status,
     iterations = res$iterations,
@@ -390,12 +409,14 @@ solve_request <- function(groups, co2_on, co2_cap) {
   )
 
   if (res$status == "optimal") {
+    # split basic solution into dual shadow prices and primal mw dispatch
     sol_vec <- as.numeric(res$basicSolution)
     S_vals <- sol_vec[1:m]
     x_vals <- sol_vec[(m + 1):(m + n)]
 
     out$z <- round(res$Z, 2)
 
+    # group primal dispatch values by power plant across the 6 blocks
     unique_groups <- unique(vars$g)
     x_grouped <- list()
     for (idx in seq_along(unique_groups)) {
@@ -405,7 +426,9 @@ solve_request <- function(groups, co2_on, co2_cap) {
     }
     out$x <- x_grouped
 
+    # compute hourly marginal prices from the first 6 demand dual variables
     out$prices <- round(S_vals[1:6] / H, 2)
+    # verify strong duality by comparing dual objective to primal total cost
     out$check <- round(sum(lp$b * S_vals), 2)
   } else if (res$status == "infeasible") {
     out$message <- "The problem is infeasible."
@@ -415,4 +438,3 @@ solve_request <- function(groups, co2_on, co2_cap) {
 
   return(out)
 }
-# nolint end
