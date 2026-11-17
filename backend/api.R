@@ -63,18 +63,7 @@ function() {
 # --------------------------------------------------
 # receives the power dispatch configuration from the
 # react frontend and passes it to the simplex solver
-#
-# expected request body
-# {
-#   "groups": [...],
-#   "co2On": bool,
-#   "co2Cap": number | null
-# }
-#
 # possible responses
-# - successful optimization result
-# - invalid request or configuration
-# - unexpected solver error
 
 #* @post /solve
 #* @serializer json list(auto_unbox = TRUE, digits = NA)
