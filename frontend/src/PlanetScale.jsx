@@ -1,8 +1,13 @@
 import { useEffect, useRef } from "react";
 
-// greyscale surfaces inspired by the ascii.rest
-// planet scale piece by @bas3line
-
+/*
+ * ASCII design reference
+ * ----------------------
+ * Inspired by "planet scale" by @bas3line (MIT License)
+ *   Piece:   https://ascii.rest/planetscale/
+ *   Repo:    https://github.com/bas3line/ascii
+ *   Package: ascii.rest (ascii.rest/react & ascii.rest/pieces)
+ */
 
 const SCALE = " ·•●"; // halftone palette
 
