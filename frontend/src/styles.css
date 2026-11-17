@@ -1,122 +1,925 @@
+
 /*
- * Greyscale surfaces taken from the ascii.rest "planet scale" piece by @bas3line
- * (https://ascii.rest/planet-scale/): near-black ground, soft greys, one moon.
- * The piece is fixed behind the page, and every panel is frosted glass over it,
- * with a halftone dot grain from the same piece. Orange (main action) and gold
- * (results) are the only colours.
+ * design system
+ * --------------------------------------------------
+ * greyscale surfaces inspired by the ascii.rest
+ * planet scale piece by @bas3line
  *
- * System: 4px spacing scale (--s1..--s6), one radius (--r), one shadow,
- * a five-step type ramp (--fs/--lh).
+ * visual direction
+ * - near black background with soft greys
+ * - frosted glass panels with subtle halftone grain
+ * - orange for primary actions
+ * - gold for results and highlighted values
+ *
+ * layout system
+ * - 4px spacing scale
+ * - consistent border radius and shadow
+ * - five step typography system
+ * - reusable color and transition variables
  */
+
 :root {
-  --ground: #060708; --line: rgba(255, 255, 255, .1);
-  --ink: #eef1f6; --muted: #a6b3d2; --blue: #8f99ab;
-  --orange: #f38020; --on-orange: #1c0f03; --gold: #ffd27c;
-  --good: #8fe0b0; --bad: #ff8b80;
-  --glass: rgba(16, 18, 22, .58); --glass-edge: rgba(255, 255, 255, .16); --fill: rgba(255, 255, 255, .08);
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
-  --r: 10px; --shadow: 0 10px 32px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .18);
-  --fs-xs: 12px; --lh-xs: 16px; --fs-sm: 14px; --lh-sm: 20px; --fs-md: 16px; --lh-md: 24px; --fs-lg: 20px; --lh-lg: 28px;
+  /* base colors */
+  --ground: #060708;
+  --line: rgba(255, 255, 255, 0.1);
+
+  /* text colors */
+  --ink: #eef1f6;
+  --muted: #a6b3d2;
+  --blue: #8f99ab;
+
+  /* accent colors */
+  --orange: #f38020;
+  --on-orange: #1c0f03;
+  --gold: #ffd27c;
+
+  /* status colors */
+  --good: #8fe0b0;
+  --bad: #ff8b80;
+
+  /* glass surfaces */
+  --glass: rgba(16, 18, 22, 0.58);
+  --glass-edge: rgba(255, 255, 255, 0.16);
+  --fill: rgba(255, 255, 255, 0.08);
+
+  /* spacing scale based on 4px increments */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* shared shape and elevation */
+  --r: 10px;
+  --shadow:
+    0 10px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  /* typography scale */
+  --fs-xs: 12px;
+  --lh-xs: 16px;
+
+  --fs-sm: 14px;
+  --lh-sm: 20px;
+
+  --fs-md: 16px;
+  --lh-md: 24px;
+
+  --fs-lg: 20px;
+  --lh-lg: 28px;
+
+  /* font families */
   --sans: "Chivo", system-ui, "Segoe UI", sans-serif;
   --mono: "Chivo Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  --ease: .15s ease;
+
+  /* animation timing */
+  --ease: 0.15s ease;
+
+  /* use dark browser controls */
   color-scheme: dark;
 }
-* { box-sizing: border-box; }
-body { margin: 0; font: 400 var(--fs-sm)/var(--lh-sm) var(--sans); background: var(--ground); color: var(--ink); }
-:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.app { isolation: isolate; min-height: 100vh; }
 
-/* the skyline: fixed, covers the window, dimmed toward the bottom so panels stay readable */
-.skyline { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--ground); }
-.skyline canvas { position: absolute; left: 50%; top: 0; width: max(100vw, 200vh) !important; transform: translateX(-50%); }
-.skyline::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(6, 7, 8, .1), rgba(6, 7, 8, .45) 40%, rgba(6, 7, 8, .7)); }
-.hero { position: relative; height: clamp(168px, 18vw, 256px); }
-.hero-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 var(--s4) var(--s4); }
-.hero h1 { margin: 0; font-size: clamp(32px, 4.5vw, 48px); line-height: 1.1; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 2px 16px rgba(6, 7, 8, .7); }
-.hero p { margin: var(--s2) 0 0; max-width: 56ch; font-size: var(--fs-md); line-height: var(--lh-md); color: #d6deee; text-shadow: 0 1px 8px rgba(6, 7, 8, .8); }
 
-.layout { padding: 0 var(--s4) var(--s4); }
-main { min-width: 0; }
-/* three control groups share one row and one height; the Solve button sits at the foot of its group */
-.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); align-items: stretch; }
-@media (max-width: 1100px) { .controls { grid-template-columns: 1fr; } }
+/*
+ * global styles
+ * --------------------------------------------------
+ * establish consistent sizing and default typography
+ */
 
-/* frosted glass: a sheen, a fine dot grain, a translucent tint, and blur of what lies behind */
-.card, .stat {
-  background: linear-gradient(135deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .03) 45%),
-              radial-gradient(rgba(255, 255, 255, .08) 1px, transparent 1.4px) 0 0 / 6px 6px,
-              var(--glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid var(--glass-edge); border-radius: var(--r); box-shadow: var(--shadow);
+* {
+  box-sizing: border-box;
 }
-.card { padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3); }
-main .card { margin-bottom: var(--s4); }
-h2 { margin: 0; font-size: var(--fs-md); line-height: var(--lh-md); font-weight: 800; }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
-.row { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; } .between { justify-content: space-between; }
 
-button { font: inherit; color: var(--ink); border: 1px solid transparent; border-radius: var(--r); padding: var(--s2) var(--s4); cursor: pointer; transition: background var(--ease), border-color var(--ease), filter var(--ease); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-.ghost { background: var(--fill); border-color: var(--glass-edge); } .ghost:hover:not(:disabled) { background: rgba(255, 255, 255, .15); }
-.solve { width: 100%; margin-top: auto; background: var(--orange); color: var(--on-orange); font-weight: 800; font-size: var(--fs-md); line-height: var(--lh-md); padding: var(--s3); }
-.solve:hover:not(:disabled) { filter: brightness(1.1); }
-.spinner { display: inline-block; width: 14px; height: 14px; margin-right: var(--s2); vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--fs-sm) / var(--lh-sm) var(--sans);
+}
 
-.plants { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: var(--s1); }
-.plant { display: grid; grid-template-columns: 16px 24px 1fr; align-items: center; gap: var(--s2); padding: var(--s2); border-radius: var(--r); cursor: pointer; border: 1px solid transparent; transition: background var(--ease), border-color var(--ease); }
-.plant.on { background: var(--fill); border-color: var(--glass-edge); }
-.plant-text { display: flex; flex-direction: column; } .plant small { color: var(--muted); font-size: var(--fs-xs); line-height: var(--lh-xs); }
-.icon { width: 24px; height: 24px; color: var(--muted); } .plant.on .icon { color: var(--ink); }
-input[type="checkbox"] { accent-color: var(--orange); margin: 0; }
-.switch { display: flex; align-items: center; gap: var(--s2); }
-.num, select { font: inherit; color: var(--ink); background: rgba(6, 7, 8, .45); border: 1px solid var(--glass-edge); border-radius: var(--r); padding: var(--s2) var(--s3); }
-.num { width: 128px; font-family: var(--mono); } .num:disabled { opacity: .5; }
-.presets { display: grid; gap: var(--s2); }
-.preset { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); text-align: left; width: 100%; }
-.preset small { color: var(--muted); font-size: var(--fs-xs); line-height: var(--lh-xs); }
+/* visible keyboard focus for accessibility */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
 
-.tabs { display: flex; gap: var(--s2); margin: var(--s4) 0; }
-.tabs button { background: var(--fill); color: var(--muted); border-color: var(--line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.tabs .active { background: rgba(255, 255, 255, .16); color: var(--ink); font-weight: 800; box-shadow: inset 0 -2px 0 var(--orange); }
+/* isolate the application stacking context */
+.app {
+  isolation: isolate;
+  min-height: 100vh;
+}
 
-.banner { padding: var(--s3) var(--s4); border-radius: var(--r); font-weight: 600; border: 1px solid; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-main > .banner { margin-bottom: var(--s4); }
-.good { background: rgba(143, 224, 176, .14); color: var(--good); border-color: rgba(143, 224, 176, .4); }
-.bad { background: rgba(255, 122, 110, .14); color: var(--bad); border-color: rgba(255, 122, 110, .4); }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(192px, 1fr)); gap: var(--s4); margin-bottom: var(--s4); }
-.stat { padding: var(--s4); min-height: 88px; display: flex; flex-direction: column; justify-content: space-between; gap: var(--s2); }
-.stat small { color: var(--muted); }
-.stat b { font: 600 var(--fs-lg)/var(--lh-lg) var(--mono); color: var(--gold); }
 
-.skeleton { position: relative; overflow: hidden; } .skeleton.tall { min-height: 240px; }
-.skeleton::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1), transparent); transform: translateX(-100%); animation: sheen 1.4s ease-in-out infinite; }
-@keyframes sheen { to { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } .skeleton::after { animation: none; } }
+/*
+ * background skyline
+ * --------------------------------------------------
+ * fixed background artwork that remains behind the
+ * application content while the page is scrolling
+ */
 
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { padding: var(--s2) var(--s3); text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
-td { font-family: var(--mono); } th:first-child, td:first-child { text-align: left; font-family: var(--sans); }
-th small { display: block; font-weight: 400; color: var(--muted); font-size: var(--fs-xs); line-height: var(--lh-xs); }
-thead th { background: rgba(255, 255, 255, .07); font-weight: 600; }
-.glyph { display: inline-block; width: 1.2em; margin-right: var(--s2); text-align: center; color: var(--gold); }
+.skyline {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--ground);
+}
 
-.scroll { overflow: auto; max-height: 62vh; border: 1px solid var(--line); border-radius: var(--r); }
-.tab th, .tab td { padding: var(--s1) var(--s2); font-size: var(--fs-xs); line-height: var(--lh-xs); border: 1px solid var(--line); }
-/* sticky headers stay opaque so scrolled cells never show through them */
-.tab thead th { position: sticky; top: 0; z-index: 2; background: #1a1d24; }
-.tab tbody th { position: sticky; left: 0; z-index: 1; background: #1a1d24; }
-/* later rules win at equal specificity: row, then column, then the pivot cell on top */
-.tab .bottom td { background: rgba(255, 210, 124, .14); font-weight: 600; }
-.tab .bottom th { background: #2b2616; font-weight: 600; }
-.tab .prow td { background: rgba(243, 128, 32, .22); }
-.tab td.pcol { background: rgba(112, 137, 192, .28); }
-.tab thead th.pcol { background: #364e8b; }
-.tab td.pivot { background: var(--gold); color: #1c1405; font-weight: 700; }
+/* center and scale the animated ascii canvas */
+.skyline canvas {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: max(100vw, 200vh) !important;
+  transform: translateX(-50%);
+}
 
-.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.chips span { background: rgba(255, 210, 124, .12); color: var(--gold); border: 1px solid rgba(255, 210, 124, .3); padding: var(--s1) var(--s3); border-radius: var(--r); font: 400 var(--fs-xs)/var(--lh-xs) var(--mono); }
-.note { margin: 0; color: var(--muted); }
-.empty { align-items: center; text-align: center; color: var(--muted); padding: var(--s6) var(--s5); }
-.empty .glyphs { font: 400 var(--fs-lg)/var(--lh-lg) var(--mono); letter-spacing: .5em; color: var(--blue); }
+/* darken the lower portion to preserve text readability */
+.skyline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 7, 8, 0.1),
+    rgba(6, 7, 8, 0.45) 40%,
+    rgba(6, 7, 8, 0.7)
+  );
+}
+
+
+/*
+ * hero section
+ * --------------------------------------------------
+ * responsive introductory section positioned above
+ * the main application controls
+ */
+
+.hero {
+  position: relative;
+  height: clamp(168px, 18vw, 256px);
+}
+
+/* position the heading and description at the bottom */
+.hero-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 var(--s4) var(--s4);
+}
+
+/* main page heading */
+.hero h1 {
+  margin: 0;
+  font-size: clamp(32px, 4.5vw, 48px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 16px rgba(6, 7, 8, 0.7);
+}
+
+/* introductory description */
+.hero p {
+  max-width: 56ch;
+  margin: var(--s2) 0 0;
+  color: #d6deee;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  text-shadow: 0 1px 8px rgba(6, 7, 8, 0.8);
+}
+
+
+/*
+ * main layout
+ * --------------------------------------------------
+ * maintain consistent page spacing and prevent
+ * overflowing content inside the main container
+ */
+
+.layout {
+  padding: 0 var(--s4) var(--s4);
+}
+
+main {
+  min-width: 0;
+}
+
+
+/*
+ * control groups
+ * --------------------------------------------------
+ * arrange the three control sections in equal columns
+ * on larger screens and stack them on smaller screens
+ */
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+  align-items: stretch;
+}
+
+/* stack control groups when horizontal space is limited */
+@media (max-width: 1100px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/*
+ * glass surfaces
+ * --------------------------------------------------
+ * reusable frosted glass appearance for cards and
+ * statistic panels
+ *
+ * layers
+ * 1. diagonal highlight for a glass-like sheen
+ * 2. radial pattern for subtle halftone grain
+ * 3. translucent dark background
+ * 4. backdrop blur and saturation
+ */
+
+.card,
+.stat {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0.03) 45%
+    ),
+    radial-gradient(
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1.4px
+    ) 0 0 / 6px 6px,
+    var(--glass);
+
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+
+/* standard card layout */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s5);
+}
+
+/* separate consecutive cards vertically */
+main .card {
+  margin-bottom: var(--s4);
+}
+
+
+/*
+ * headings and reusable flex layouts
+ * --------------------------------------------------
+ */
+
+h2 {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: 800;
+}
+
+/* card heading with optional actions on the right */
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+/* reusable horizontal row */
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+/* push row contents toward opposite ends */
+.between {
+  justify-content: space-between;
+}
+
+
+/*
+ * buttons
+ * --------------------------------------------------
+ * shared button styling with separate visual
+ * treatments for primary and secondary actions
+ */
+
+button {
+  padding: var(--s2) var(--s4);
+  border: 1px solid transparent;
+  border-radius: var(--r);
+
+  background: transparent;
+  color: var(--ink);
+
+  font: inherit;
+  cursor: pointer;
+
+  transition:
+    background var(--ease),
+    border-color var(--ease),
+    filter var(--ease);
+}
+
+/* visually indicate unavailable actions */
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* secondary button with a translucent background */
+.ghost {
+  background: var(--fill);
+  border-color: var(--glass-edge);
+}
+
+/* brighten secondary buttons on hover */
+.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* primary solve action */
+.solve {
+  width: 100%;
+  margin-top: auto;
+  padding: var(--s3);
+
+  background: var(--orange);
+  color: var(--on-orange);
+
+  font-size: var(--fs-md);
+  line-height: var(--lh-md);
+  font-weight: 800;
+}
+
+/* subtle brightness increase on hover */
+.solve:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+
+/*
+ * loading spinner
+ * --------------------------------------------------
+ * small circular indicator displayed while an
+ * operation is being processed
+ */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: var(--s2);
+
+  vertical-align: -2px;
+
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+
+  animation: spin 0.7s linear infinite;
+}
+
+/* continuously rotate the spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/*
+ * power plant selection
+ * --------------------------------------------------
+ * responsive grid containing selectable power sources
+ */
+
+.plants {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: var(--s1);
+}
+
+/* individual selectable power plant */
+.plant {
+  display: grid;
+  grid-template-columns: 16px 24px 1fr;
+  align-items: center;
+  gap: var(--s2);
+
+  padding: var(--s2);
+
+  border: 1px solid transparent;
+  border-radius: var(--r);
+
+  cursor: pointer;
+
+  transition:
+    background var(--ease),
+    border-color var(--ease);
+}
+
+/* highlight selected power plants */
+.plant.on {
+  background: var(--fill);
+  border-color: var(--glass-edge);
+}
+
+/* stack plant name and description vertically */
+.plant-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* secondary plant description */
+.plant small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+/* plant icon appearance */
+.icon {
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+}
+
+/* brighten icons when their plant is selected */
+.plant.on .icon {
+  color: var(--ink);
+}
+
+/* apply the primary accent to native checkboxes */
+input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--orange);
+}
+
+
+/*
+ * form controls
+ * --------------------------------------------------
+ * shared alignment for switches, numeric inputs,
+ * dropdowns, and scenario presets
+ */
+
+/* align switch label and control */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* numeric inputs and dropdown fields */
+.num,
+select {
+  padding: var(--s2) var(--s3);
+
+  background: rgba(6, 7, 8, 0.45);
+  color: var(--ink);
+
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r);
+
+  font: inherit;
+}
+
+/* fixed width and monospace numbers */
+.num {
+  width: 128px;
+  font-family: var(--mono);
+}
+
+/* visually dim disabled numeric inputs */
+.num:disabled {
+  opacity: 0.5;
+}
+
+
+/*
+ * scenario presets
+ * --------------------------------------------------
+ * vertically arranged buttons for predefined
+ * simulation configurations
+ */
+
+.presets {
+  display: grid;
+  gap: var(--s2);
+}
+
+/* preset button content alignment */
+.preset {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  width: 100%;
+  gap: var(--s1);
+
+  text-align: left;
+}
+
+/* supporting preset description */
+.preset small {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+}
+
+
+/*
+ * navigation tabs
+ * --------------------------------------------------
+ * translucent tab buttons with an orange active
+ * indicator
+ */
+
+.tabs {
+  display: flex;
+  gap: var(--s2);
+  margin: var(--s4) 0;
+}
+
+/* inactive tab appearance */
+.tabs button {
+  background: var(--fill);
+  color: var(--muted);
+  border-color: var(--line);
+
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* selected tab */
+.tabs .active {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ink);
+
+  font-weight: 800;
+  box-shadow: inset 0 -2px 0 var(--orange);
+}
+
+
+/*
+ * status banners
+ * --------------------------------------------------
+ * reusable feedback messages for successful and
+ * unsuccessful operations
+ */
+
+.banner {
+  padding: var(--s3) var(--s4);
+
+  border: 1px solid;
+  border-radius: var(--r);
+
+  font-weight: 600;
+
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+/* maintain spacing between banner and following content */
+main > .banner {
+  margin-bottom: var(--s4);
+}
+
+/* successful operation */
+.good {
+  background: rgba(143, 224, 176, 0.14);
+  color: var(--good);
+  border-color: rgba(143, 224, 176, 0.4);
+}
+
+/* failed operation or error */
+.bad {
+  background: rgba(255, 122, 110, 0.14);
+  color: var(--bad);
+  border-color: rgba(255, 122, 110, 0.4);
+}
+
+
+/*
+ * simulation statistics
+ * --------------------------------------------------
+ * responsive collection of statistic cards displaying
+ * important simulation results
+ */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(192px, 1fr));
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+
+/* individual statistic panel */
+.stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  min-height: 88px;
+  padding: var(--s4);
+  gap: var(--s2);
+}
+
+/* statistic label */
+.stat small {
+  color: var(--muted);
+}
+
+/* highlighted numeric result */
+.stat b {
+  color: var(--gold);
+  font: 600 var(--fs-lg) / var(--lh-lg) var(--mono);
+}
+
+
+/*
+ * loading skeletons
+ * --------------------------------------------------
+ * placeholder surfaces shown while simulation data
+ * or visualizations are being loaded
+ */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+/* taller placeholder for large content areas */
+.skeleton.tall {
+  min-height: 240px;
+}
+
+/* animated horizontal shimmer */
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+
+  transform: translateX(-100%);
+  animation: sheen 1.4s ease-in-out infinite;
+}
+
+/* move the shimmer across the placeholder */
+@keyframes sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+
+/*
+ * simulation result tables
+ * --------------------------------------------------
+ * standard tabular presentation with aligned numeric
+ * values and highlighted table headings
+ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+/* shared table cell spacing and alignment */
+th,
+td {
+  padding: var(--s2) var(--s3);
+
+  text-align: right;
+  white-space: nowrap;
+
+  border-bottom: 1px solid var(--line);
+}
+
+/* use monospace for numerical data */
+td {
+  font-family: var(--mono);
+}
+
+/* keep the first column left-aligned */
+th:first-child,
+td:first-child {
+  text-align: left;
+  font-family: var(--sans);
+}
+
+/* secondary information inside table headings */
+th small {
+  display: block;
+
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  font-weight: 400;
+}
+
+/* table header background */
+thead th {
+  background: rgba(255, 255, 255, 0.07);
+  font-weight: 600;
+}
+
+/* small decorative symbol beside labels */
+.glyph {
+  display: inline-block;
+  width: 1.2em;
+  margin-right: var(--s2);
+
+  color: var(--gold);
+  text-align: center;
+}
+
+
+/*
+ * scrollable tableau
+ * --------------------------------------------------
+ * constrained table container with sticky headers
+ * for navigating larger simplex or iteration tables
+ */
+
+.scroll {
+  max-height: 62vh;
+  overflow: auto;
+
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+/* compact table variant */
+.tab th,
+.tab td {
+  padding: var(--s1) var(--s2);
+
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+
+  border: 1px solid var(--line);
+}
+
+/* keep column headers visible while scrolling vertically */
+.tab thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  background: #1a1d24;
+}
+
+/* keep row labels visible while scrolling horizontally */
+.tab tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+
+  background: #1a1d24;
+}
+
+
+/*
+ * simplex tableau highlighting
+ * --------------------------------------------------
+ * distinguish important rows, columns, and pivot
+ * elements during simplex iterations
+ *
+ * background priority
+ * 1. bottom row
+ * 2. pivot row
+ * 3. pivot column
+ * 4. pivot cell
+ *
+ * later rules override earlier rules when selectors
+ * have equal specificity
+ */
+
+/* objective or bottom row */
+.tab .bottom td {
+  background: rgba(255, 210, 124, 0.14);
+  font-weight: 600;
+}
+
+.tab .bottom th {
+  background: #2b2616;
+  font-weight: 600;
+}
+
+/* currently selected pivot row */
+.tab .prow td {
+  background: rgba(243, 128, 32, 0.22);
+}
+
+/* currently selected pivot column */
+.tab td.pcol {
+  background: rgba(112, 137, 192, 0.28);
+}
+
+/* pivot column heading */
+.tab thead th.pcol {
+  background: #364e8b;
+}
+
+/* intersection of pivot row and pivot column */
+.tab td.pivot {
+  background: var(--gold);
+  color: #1c1405;
+  font-weight: 700;
+}
+
+
+/*
+ * result chips
+ * --------------------------------------------------
+ * compact labels for displaying selected simulation
+ * parameters, classifications, or result metadata
+ */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+/* individual result chip */
+.chips span {
+  padding: var(--s1) var(--s3);
+
+  background: rgba(255, 210, 124, 0.12);
+  color: var(--gold);
+
+  border: 1px solid rgba(255, 210, 124, 0.3);
+  border-radius: var(--r);
+
+  font: 400 var(--fs-xs) / var(--lh-xs) var(--mono);
+}
+
+
+/*
+ * supporting text and empty states
+ * --------------------------------------------------
+ */
+
+/* secondary explanatory text */
+.note {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* centered placeholder when no results are available */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: var(--s6) var(--s5);
+
+  color: var(--muted);
+  text-align: center;
+}
+
+/* decorative symbols inside empty states */
+.empty .glyphs {
+  color: var(--blue);
+
+  font: 400 var(--fs-lg) / var(--lh-lg) var(--mono);
+  letter-spacing: 0.5em;
+}
