@@ -38,7 +38,7 @@ get_avail <- function(g, t) {
 }
 
 # ============================================================
-# Corrected Simplex Method 
+#  Simplex Method 
 # ============================================================
 
 Simplex <- function(tableau, isMax, max_iter = 5000) { 
