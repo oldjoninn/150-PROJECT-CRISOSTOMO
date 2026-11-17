@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { PlanetScale } from "./PlanetScale";
 import "./styles.css";
 
 /*
@@ -331,16 +331,13 @@ export default function App() {
    */
   return (
     <div className="app">
+      {/* fixed animated ascii planet backdrop */}
+      <div className="skyline" aria-hidden="true">
+        <PlanetScale />
+      </div>
 
-      {/* hero section with the animated ascii planet backdrop */}
+      {/* hero section */}
       <header className="hero">
-        <div className="skyline" aria-hidden="true">
-          <ascii-art
-            piece="planet-scale"
-            label="Animated ASCII planet with a circling moon"
-          ></ascii-art>
-        </div>
-
         <div className="hero-copy">
           <h1>Luzon Grid Dispatch</h1>
 
