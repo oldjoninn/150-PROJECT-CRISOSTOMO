@@ -438,3 +438,5 @@ solve_request <- function(groups, co2_on, co2_cap) {
 
   return(out)
 }
+
+# nolint end
